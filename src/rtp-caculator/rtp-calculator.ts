@@ -8,7 +8,8 @@ import { IPayCalculatorEventSpec, IRTPCalculatorResult } from "./types";
 import { mergeByAdd } from "../hold-target-selector/util";
 import * as os from "os";
 import * as cluster from "cluster";
-
+import { combinations } from "../video-poker/util";
+var fs = require("fs");
 function noop() {}
 
 export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
@@ -62,6 +63,7 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
     console.log("Start to calculate RTP");
     const startTime = Date.now();
     const progressUnit = Math.floor(targetPossibleHandList.length / 1000);
+    const handHoldsBuffer = Buffer.allocUnsafe(targetPossibleHandList.length);
     for (let i = 0; i < targetPossibleHandList.length; ++i) {
       if (i % progressUnit === 0) {
         this.emit.progress(i + 1, targetPossibleHandList.length);
@@ -82,6 +84,25 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
             return acc;
           }
         });
+      let highestExpectedValueCount =
+        mainDeckExpectedValueWithPossibleHoldingHandList.reduce((acc, cv) => {
+          if (cv.expected_value === highestExpectedValueWithHand.expected_value)
+            acc++;
+          return acc;
+        }, 0);
+
+      let holdMask = possibleHand.reduce((acc: number, cv, i) => {
+        if (i > 0) acc = acc << 1;
+        if (highestExpectedValueWithHand.hand.indexOf(cv) !== -1) {
+          acc = acc | 1;
+        }
+        return acc;
+      }, 0);
+      // if (highestExpectedValueCount > 1) {
+      //   holdMask = holdMask | 0b10000000;
+      // }
+      handHoldsBuffer.writeUInt8(holdMask, i);
+
       expectedValueSum += highestExpectedValueWithHand.expected_value;
       // TODO: 'case_count' is not useful -> better statistics?
       for (const key in highestExpectedValueWithHand.outcome.result) {
@@ -90,6 +111,7 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
       }
       highestExpectedValueWithHand.outcome.case_count = 1;
       mergeByAdd(caseStatistics, highestExpectedValueWithHand.outcome);
+      // if (i > 2) break;
     }
     const endTime = Date.now();
     console.log(
@@ -98,10 +120,18 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
       } seconds`
     );
 
+    const fromIndex = Number(process.env.from_index ?? 0);
+    const toIndex =
+      Number(process.env.from_index ?? 0) + targetPossibleHandList.length - 1;
+    const fileName = `temp_${fromIndex.toString().padStart(7, "0")}-${toIndex
+      .toString()
+      .padStart(7, "0")}.bin`;
+    fs.appendFileSync(fileName, handHoldsBuffer);
     const result: IRTPCalculatorResult = {
       hand_count: targetPossibleHandList.length,
       expected_value_sum: expectedValueSum,
       statistics: caseStatistics,
+      holdMasks: fileName,
     };
     this.emit.done(result);
     return result;
@@ -111,22 +141,8 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
     const deck = new Deck();
     const allCardList: TCard[] = deck.card_list;
     const allPossibleHandList: TCard[][] = [];
-    for (let i1 = 0; i1 < allCardList.length - 4; ++i1) {
-      for (let i2 = i1 + 1; i2 < allCardList.length - 3; ++i2) {
-        for (let i3 = i2 + 1; i3 < allCardList.length - 2; ++i3) {
-          for (let i4 = i3 + 1; i4 < allCardList.length - 1; ++i4) {
-            for (let i5 = i4 + 1; i5 < allCardList.length; ++i5) {
-              allPossibleHandList.push([
-                allCardList[i1],
-                allCardList[i2],
-                allCardList[i3],
-                allCardList[i4],
-                allCardList[i5],
-              ]);
-            }
-          }
-        }
-      }
+    for (let hand of combinations(allCardList, 5)) {
+      allPossibleHandList.push(hand);
     }
 
     const numCPUs = Math.ceil(os.cpus().length / 2);
@@ -143,13 +159,17 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
 
       // Merge result
       const result: any = {};
+      const fileNames = Array(numCPUs);
       const progressPerWorker = {};
       let workerGrossProcessedCaseCount = 0;
       const progressUnit = totalCaseCount / 100;
       let nextProgress = 0;
       const messageHandler = function (id, msg) {
         if (msg.cmd === "done") {
-          RTPCalculator.mergeStatistics(result, msg.stats);
+          // console.log(id, msg);
+          const { holdMasks, ...stats } = msg.stats;
+          fileNames[id - 1] = holdMasks;
+          RTPCalculator.mergeStatistics(result, stats);
         } else if (msg.cmd === "err") {
           this.emit.error(RTPCalculator.objectToErr(msg.err));
           process.exit(1);
@@ -180,6 +200,12 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
           finishedWorkers++;
           if (finishedWorkers === numCPUs) {
             process.stdout.write("100%\r\n");
+            // result.holdMasks = holdMasks.flat();
+            // console.log(fileNames, result);
+            for (let fn of fileNames) {
+              fs.appendFileSync("demo.bin", fs.readFileSync(fn));
+              fs.unlinkSync(fn);
+            }
             this.emit.doneParallel(result);
           }
         }.bind(this)

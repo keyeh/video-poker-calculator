@@ -3,3 +3,5 @@ node_modules
 .*.swp
 gen
 filecache_*
+*.bin
+*.js

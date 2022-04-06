@@ -1,13 +1,15 @@
-import {
-    TCard,
-    IDeck,
-} from './types';
+import { TCard, IDeck } from "./types";
 
 export default class Deck implements IDeck {
   card_list: TCard[];
 
   constructor() {
-    this.card_list = Array.from(Array(52).keys()) as TCard[];
+    // Kevin's custom order
+    this.card_list = [
+      39, 13, 0, 26, 40, 14, 1, 27, 41, 15, 2, 28, 42, 16, 3, 29, 43, 17, 4, 30,
+      44, 18, 5, 31, 45, 19, 6, 32, 46, 20, 7, 33, 47, 21, 8, 34, 48, 22, 9, 35,
+      49, 23, 10, 36, 50, 24, 11, 37, 51, 25, 12, 38,
+    ];
   }
 
   draw() {
@@ -34,7 +36,14 @@ export default class Deck implements IDeck {
 
   shuffle() {
     const arr = this.card_list;
-    for (let j, x, i = arr.length; i; j = Math.floor(Math.random() * i), x = arr[--i], arr[i] = arr[j], arr[j] = x);
+    for (
+      let j, x, i = arr.length;
+      i;
+      j = Math.floor(Math.random() * i),
+        x = arr[--i],
+        arr[i] = arr[j],
+        arr[j] = x
+    );
   }
 
   filterOut(removeTargetCardList: TCard[]) {

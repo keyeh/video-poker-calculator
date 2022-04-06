@@ -1,11 +1,10 @@
-import {
-  IExpectedOutcome,
-} from '../hold-target-selector/types';
+import { IExpectedOutcome } from "../hold-target-selector/types";
 
 export interface IRTPCalculatorResult {
   hand_count: number;
   expected_value_sum: number;
   statistics: IExpectedOutcome;
+  holdMasks?: string;
 }
 
 export interface IPayCalculatorEventSpec {
