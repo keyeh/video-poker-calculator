@@ -102,26 +102,7 @@ export default class RTPCalculator<K extends IOptimalHoldTargetSelector> {
   }
 
   calculateRTPParallel() {
-    const deck = new Deck();
-    const allCardList: TCard[] = deck.card_list;
-    const allPossibleHandList: TCard[][] = [];
-    for (let i1 = 0; i1 < allCardList.length - 4; ++i1) {
-      for (let i2 = i1 + 1; i2 < allCardList.length - 3; ++i2) {
-        for (let i3 = i2 + 1; i3 < allCardList.length - 2; ++i3) {
-          for (let i4 = i3 + 1; i4 < allCardList.length - 1; ++i4) {
-            for (let i5 = i4 + 1; i5 < allCardList.length; ++i5) {
-              allPossibleHandList.push([
-                allCardList[i1],
-                allCardList[i2],
-                allCardList[i3],
-                allCardList[i4],
-                allCardList[i5],
-              ]);
-            }
-          }
-        }
-      }
-    }
+    const allPossibleHandList: TCard[][] = Deck.allPossibleHandList
 
     const numCPUs = Math.ceil(os.cpus().length / 2);
     if (cluster.isMaster) {
