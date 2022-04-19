@@ -19,26 +19,7 @@ export class PayCalculatorTester<K extends IPayCalculator> {
   }
 
   calculatePayForAllPossibleHand() {
-    const newDeck = new Deck();
-    const cardList = newDeck.card_list;
-    const allPossibleHandList: TCard[][] = [];
-    for (let i1 = 0; i1 < cardList.length - 4; ++i1) {
-      for (let i2 = i1 + 1; i2 < cardList.length - 3; ++i2) {
-        for (let i3 = i2 + 1; i3 < cardList.length - 2; ++i3) {
-          for (let i4 = i3 + 1; i4 < cardList.length - 1; ++i4) {
-            for (let i5 = i4 + 1; i5 < cardList.length; ++i5) {
-              allPossibleHandList.push([
-                cardList[i1],
-                cardList[i2],
-                cardList[i3],
-                cardList[i4],
-                cardList[i5],
-              ]);
-            }
-          }
-        }
-      }
-    }
+    const allPossibleHandList: TCard[][] = Deck.allPossibleHandList;
     console.log("ALL POSSIBLE HAND COUNT: " + allPossibleHandList.length);
 
     for (let i = 0; i < allPossibleHandList.length; ++i) {

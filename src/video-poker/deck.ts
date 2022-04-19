@@ -1,13 +1,14 @@
-import {
-    TCard,
-    IDeck,
-} from './types';
+import { TCard, IDeck } from "./types";
 
 export default class Deck implements IDeck {
   card_list: TCard[];
 
   constructor() {
-    this.card_list = Array.from(Array(52).keys()) as TCard[];
+    this.card_list = Deck.createCardList();
+  }
+
+  private static createCardList(): TCard[] {
+    return Array.from(Array(52).keys()) as TCard[];
   }
 
   draw() {
@@ -49,5 +50,28 @@ export default class Deck implements IDeck {
       }
       return !isTarget;
     });
+  }
+
+  static get allPossibleHandList(): TCard[][] {
+    const allCardList: TCard[] = Deck.createCardList();
+    const handListlist: TCard[][] = [];
+    for (let i1 = 0; i1 < allCardList.length - 4; ++i1) {
+      for (let i2 = i1 + 1; i2 < allCardList.length - 3; ++i2) {
+        for (let i3 = i2 + 1; i3 < allCardList.length - 2; ++i3) {
+          for (let i4 = i3 + 1; i4 < allCardList.length - 1; ++i4) {
+            for (let i5 = i4 + 1; i5 < allCardList.length; ++i5) {
+              handListlist.push([
+                allCardList[i1],
+                allCardList[i2],
+                allCardList[i3],
+                allCardList[i4],
+                allCardList[i5],
+              ]);
+            }
+          }
+        }
+      }
+    }
+    return handListlist;
   }
 }
