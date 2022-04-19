@@ -3,9 +3,10 @@
         "module": "commonjs",
         "target": "es6",
         "outDir": "gen/",
+        "declaration": true,
     },
     "include": [
-        "**/*.ts",
+        "src/**/*.ts",
     ],
     "exclude": [
         "node_modules",
