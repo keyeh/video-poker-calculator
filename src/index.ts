@@ -5,6 +5,7 @@ export { OptimalHoldTargetSelector } from "./hold-target-selector/optimal-select
 // video-poker/
 export * from "./video-poker/types";
 export { default as Deck } from "./video-poker/deck";
+export {default as PayCalculator} from "./video-poker/pay-calculator"
 export {
   BasicPokerGame,
   UltimateXPokerGame,
